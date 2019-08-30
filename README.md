@@ -245,45 +245,35 @@ label
 |7|C000023|Culture|[0, 0, 0, 0, 0, 0, 0, 1, 0]|
 |8|C000024|Military|[0, 0, 0, 0, 0, 0, 0, 0, 1]|
 
-### 3. 使用Keras对语料进行处理
+### 3. 构建模型
+#### 1. model 1 自己训练词权重向量
 
 ```python
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.utils import to_categorical
-import numpy as np
-
-MAX_SEQUENCE_LEN = 1000  # 文档限制长度
-MAX_WORDS_NUM = 20000  # 词典的个数
-VAL_SPLIT_RATIO = 0.2 # 验证集的比例
-
-tokenizer = Tokenizer(num_words=MAX_WORDS_NUM)
-tokenizer.fit_on_texts(texts)
-sequences = tokenizer.texts_to_sequences(texts)
-
-word_index = tokenizer.word_index
-print(len(word_index)) # all token found
-# print(word_index.get('新闻')) # get word index
-dict_swaped = lambda _dict: {val:key for (key, val) in _dict.items()}
-word_dict = dict_swaped(word_index) # swap key-value
-data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LEN)
-
-labels_categorical = to_categorical(np.asarray(labels))
-print('Shape of data tensor:', data.shape)
-print('Shape of label tensor:', labels_categorical.shape)
-
-indices = np.arange(data.shape[0])
-np.random.shuffle(indices)
-data = data[indices]
-labels_categorical = labels_categorical[indices]
-
-# split data by ratio
-val_samples_num = int(VAL_SPLIT_RATIO * data.shape[0])
-
-x_train = data[:-val_samples_num]
-y_train = labels_categorical[:-val_samples_num]
-x_val = data[-val_samples_num:]
-y_val = labels_categorical[-val_samples_num:]
+model1 = Sequential()
+model1.add(Embedding(input_dim=MAX_WORDS_NUM+1, 
+                     output_dim=EMBEDDING_DIM, 
+                     input_length=MAX_SEQUENCE_LEN))
+model1.add(Flatten())
+model1.add(Dense(64, activation='relu', input_shape=(input_dim,)))
+model1.add(Dense(64, activation='relu'))
+model1.add(Dense(len(labels_index), activation='softmax'))
+```
+Layer (type)                 Output Shape              Param #   
+=================================================================
+embedding_2 (Embedding)      (None, 1000, 300)         6000300   
+_________________________________________________________________
+flatten_2 (Flatten)          (None, 300000)            0         
+_________________________________________________________________
+dense_4 (Dense)              (None, 64)                19200064  
+_________________________________________________________________
+dense_5 (Dense)              (None, 64)                4160      
+_________________________________________________________________
+dense_6 (Dense)              (None, 9)                 585       
+=================================================================
+Total params: 25,205,109
+Trainable params: 25,205,109
+Non-trainable params: 0
+_________________________________________________________________
 ```
 
 代码中`word_index`表示发现的所有词，得到的文本序列取的是`word_index`中前面20000个词对应的索引，文本序列集合中的所有词的索引号都在20000之前：
