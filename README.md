@@ -5,12 +5,12 @@
 本文语料来自搜狗新闻文本 [下载链接](https://pan.baidu.com/s/1SMfx0X0-b6F8L9J6T5Hg2Q)，密码:dh4x。<br>
 预训练词向量模型来自[GitHub：Chinese Word Vectors 上百种预训练中文词向量](https://github.com/Embedding/Chinese-Word-Vectors)，下载地址：[Sogou News 300d](https://pan.baidu.com/s/1tUghuTno5yOvOx4LXA9-wg)。
 
-- Part 1: 基于scikit-learn机器学习Python库，对比几个传统机器学习方法的文本分类。[Blog Post](https://lijqhs.me/2019/05/22/text-classification-scikit-learn/)
-- Part 2: 基于预训练词向量模型，使用Keras工具进行文本分类，用到了CNN。[Blog Post](https://lijqhs.me/2019/05/29/text-classification-pretrained-keras-cnn/)
+- Part 1: 基于scikit-learn机器学习的文本分类方法。
+- Part 2: 基于神经网络模型的文本分类方法。
 
 <!-- TOC -->
 
-- [Text Classification](#text-classification)
+- [Chinese Text Classification](#chinese-text-classification)
     - [Part 1: 基于scikit-learn机器学习的文本分类方法](#part-1-基于scikit-learn机器学习的文本分类方法)
         - [1. 语料预处理](#1-语料预处理)
         - [2. 生成训练集和测试集](#2-生成训练集和测试集)
