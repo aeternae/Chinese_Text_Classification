@@ -33,32 +33,9 @@
 
 ## Part 1: 基于scikit-learn机器学习的文本分类方法
 
-基于scikit-learn机器学习的中文文本分类主要分为以下步骤：
-
-1. 语料预处理
-2. 生成训练集和测试集
-3. 文本特征提取:TF-IDF
-4. 构建分类器
-5. 分类器的评估
-
 ### 1. 语料预处理
 
-定义搜狗新闻文本标签的名称，类似`C000008`这样的标签是语料的子目录，在网上搜到标签对应的新闻类别，为了便于理解，定义了这个映射词典，并保留原有编号信息。在网上搜索下载`搜狗分类新闻.20061127.zip`语料并解压至`CN_Corpus`目录下，解压之后目录结构为：
-
-```
-CN_Corpus
-└─SogouC.reduced
-    └─Reduced
-        ├─C000008
-        ├─C000010
-        ├─C000013
-        ├─C000014
-        ├─C000016
-        ├─C000020
-        ├─C000022
-        ├─C000023
-        └─C000024
-```
+搜狗新闻文本标签，`C000008`标签对应的新闻类别，为了便于理解，定义映射词典。
 
 ```python
 category_labels = {
@@ -74,43 +51,13 @@ category_labels = {
 }
 ```
 
-下面进行语料的切分，将每个类别的前80%作为训练语料，后20%作为测试语料。切分完之后的语料目录如下：
-```
-data
-├─test
-│  ├─_08_Finance
-│  ├─_10_IT
-│  ├─_13_Health
-│  ├─_14_Sports
-│  ├─_16_Travel
-│  ├─_20_Education
-│  ├─_22_Recruit
-│  ├─_23_Culture
-│  └─_24_Military
-└─train
-    ├─_08_Finance
-    ├─_10_IT
-    ├─_13_Health
-    ├─_14_Sports
-    ├─_16_Travel
-    ├─_20_Education
-    ├─_22_Recruit
-    ├─_23_Culture
-    └─_24_Military
-```
+### 2. 划分训练集和测试集
 
-
-### 2. 生成训练集和测试集
-
-#### 生成数据集
-
-从上面切分好的语料目录中读取文本并进行分词预处理，输出：训练语料数据(`X_train_data`)、训练语料标签(`y_train`)、测试语料数据(`X_test_data`)、测试语料标签(`y_test`)。
-
+将文本进行分词预处理，输出：训练语料数据(`X_train_data`)、训练语料标签(`y_train`)、测试语料数据(`X_test_data`)、测试语料标签(`y_test`)。
 
 ```python
 X_train_data, y_train, X_test_data, y_test = load_datasets()
 ```
-
     label: _08_Finance, len: 1500
     label: _10_IT, len: 1500
     label: _13_Health, len: 1500
@@ -133,27 +80,9 @@ X_train_data, y_train, X_test_data, y_test = load_datasets()
     label: _24_Military, len: 490
     test corpus len: 4410
 
-数据集的形式如下：
+### 3. TF-IDF文本特征提取
 
-```python
-X_train_data[1000]
-```
-
-    '新华网 上海 月 日电 记者 黄庭钧 继 日 人民币 兑 美元 中间价 突破 关口 创 历史 新高 后 日 人民币 兑 美元汇率 继续 攀升 中国外汇交易中心 日 公布 的 中间价 为 再刷 历史 新高 大有 逼近 和 突破 心理 关口 之势 据 兴业银行 资金 营运 中心 交易员 余屹 介绍 人民币 兑 美元汇率 日 走势 继续 表现 强劲 竞价 交易 以 开盘 后 最低 曾 回到 最高 则 触及 距 关口 仅 一步之遥 收报 而 询价 交易 亦 表现 不俗 以 开盘 后 曾经 走低 到 最高 仅触 到 截至 时 分 报收 虽然 全日 波幅 较窄 但 均 在 下方 有 跃跃欲试 关口 之 态势 完'
-
-```python
-y_train[1000]
-```
-
-    '_08_Finance'
-
-![wordcloud_example](img/wordcloud_example.png)
-
-### 3. 文本特征提取:TF-IDF
-
-这个步骤将文档信息，也即每篇新闻被分好词之后的词集合，转为为基于词频-你文档词频（TF-IDF）的向量，向量的每个元素都是对应于某个词在这个文档中的TF-IDF值，在不同文档中，同一词的TF-IDF是不一样的。所有文档的TF-IDF向量堆放在一起就组成了一个TF-IDF矩阵。注意到这里应该包含了除停用词之外的所有词的TF-IDF值，词的个数构成了向量的维度。   
-
-用`TfidfVectorizer`将文档集合转为`TF-IDF`矩阵。注意到前面我们将文本做了分词并用空格隔开。如果是英文，本身就是空格隔开的，而英文的分词（Tokenizing）是包含在特征提取器中的，不需要分词这一步骤。下面我们在得到了分类器之后，使用新文本进行分类预测时，也是需要先做一下中文分词的。
+TF-IDF是一种统计方法，用以评估一字词对于一个文件集或者一个语料库中的其中一份文件的重要程度。字词的重要性随着它在文件中出现的次数成正比增加，但同时会随着它在语料库中出现的频率成反比下降。意味着一个词语在一篇文章中出现的次数越多，同时在所有文档中出现的次数越少，越能代表该文章。
 
 ```python
 stopwords = open('dict/stop_words.txt', encoding='utf-8').read().split()
@@ -164,30 +93,37 @@ X_train_tfidf = tfidf_vectorizer.fit_transform(X_train_data)
 words = tfidf_vectorizer.get_feature_names()
 ```
 
-```python
-X_train_tfidf.shape
-```
-
-    (13500, 223094)
-
-```python
-len(words)
-```
-
-    223094
-
 ### 4. 构建分类器
 
-#### Benchmark: 朴素贝叶斯分类器
+#### 朴素贝叶斯分类器
 
-得到了训练样本的文本特征，现在可以训练出一个分类器，以用来对新的新闻文本进行分类。`scikit-learn`中提供了多种分类器，其中[朴素贝叶斯](https://scikit-learn.org/stable/modules/naive_bayes.html#naive-bayes)是一个很好的基准，有多个版本的朴素贝叶斯分类器，其中[`MultinomialNB`](https://scikit-learn.org/stable/modules/naive_bayes.html#multinomial-naive-bayes)比较适合于文本分类。
+得到了训练样本的文本特征，现在可以训练出一个分类器，以用来对新的新闻文本进行分类。scikit-learn中提供了多种分类器，其中MultinomialNB比较适合于文本分类。
 
 ```python
-classifier = MultinomialNB()
-classifier.fit(X_train_tfidf, y_train)
+mnb_clf = Pipeline([
+    ('vect', TfidfVectorizer()),
+    ('clf', MultinomialNB()),
+])
+
+%time mnb_clf.fit(X_train_data, y_train)
 ```
 
-    MultinomialNB(alpha=1.0, class_prior=None, fit_prior=True)
+                   precision    recall  f1-score   support
+
+      _08_Finance       0.88      0.90      0.89       477
+           _10_IT       0.81      0.87      0.84       461
+       _13_Health       0.82      0.90      0.86       451
+       _14_Sports       0.98      1.00      0.99       480
+       _16_Travel       0.89      0.91      0.90       480
+    _20_Education       0.84      0.87      0.85       472
+      _22_Recruit       0.90      0.73      0.80       606
+      _23_Culture       0.80      0.83      0.82       476
+     _24_Military       0.94      0.91      0.92       507
+
+         accuracy                           0.87      4410
+        macro avg       0.87      0.88      0.87      4410
+     weighted avg       0.88      0.87      0.87      4410
+
 
 #### 对新文本应用分类
 
