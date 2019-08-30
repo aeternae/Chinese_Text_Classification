@@ -5,31 +5,29 @@
 本文语料来自搜狗新闻文本 [下载链接](https://pan.baidu.com/s/1SMfx0X0-b6F8L9J6T5Hg2Q)，密码:dh4x。<br>
 预训练词向量模型来自[GitHub：Chinese Word Vectors 上百种预训练中文词向量](https://github.com/Embedding/Chinese-Word-Vectors)，下载地址：[Sogou News 300d](https://pan.baidu.com/s/1tUghuTno5yOvOx4LXA9-wg)。
 
-- Part 1: 基于scikit-learn机器学习的文本分类方法。
-- Part 2: 基于神经网络模型的文本分类方法。
 
 <!-- TOC -->
 
-- [Chinese Text Classification](#chinese-text-classification)
-    - [Part 1: 基于scikit-learn机器学习的文本分类方法](#part-1-基于scikit-learn机器学习的文本分类方法)
-        - [1. 语料预处理](#1-语料预处理)
-        - [2. 生成训练集和测试集](#2-生成训练集和测试集)
-            - [生成数据集](#生成数据集)
-        - [3. 文本特征提取:TF-IDF](#3-文本特征提取tf-idf)
-        - [4. 构建分类器](#4-构建分类器)
-            - [Benchmark: 朴素贝叶斯分类器](#benchmark-朴素贝叶斯分类器)
-            - [对新文本应用分类](#对新文本应用分类)
-        - [5. 分类器的评估](#5-分类器的评估)
-            - [构建Logistic Regression分类器](#构建logistic-regression分类器)
-            - [构建SVM分类器](#构建svm分类器)
-    - [Part 2: 基于预训练模型的CNN文本分类方法-Keras](#part-2-基于预训练模型的cnn文本分类方法-keras)
-        - [1. 读取语料](#1-读取语料)
-        - [2. 加载预训练词向量模型](#2-加载预训练词向量模型)
-        - [3. 使用Keras对语料进行处理](#3-使用keras对语料进行处理)
-        - [4. 定义词嵌入矩阵](#4-定义词嵌入矩阵)
-            - [Embedding Layer](#embedding-layer)
-        - [5. 构建模型](#5-构建模型)
-        - [参考资料](#参考资料)
+* Chinese Text Classification
+    * Part 1: 基于scikit-learn机器学习的文本分类方法
+        * 1. 语料预处理
+        * 2. 划分训练集与测试集
+        * 3. TF-IDF文本特征提取
+        * 4. 构建分类器
+            * 朴素贝叶斯分类器
+            * 逻辑回归LR
+            * 支持向量机SVM
+        * 5. 模型评估与比较
+    * Part 2: 基于神经网络模型的文本分类方法
+        * 1. 读取语料
+        * 2. 语料预处理
+            * 将文本转化为词向量矩阵
+            * 划分训练集与校验集
+        * 3. 构建模型
+            * model 1 自己训练词权重向量
+            * model 2 加载预训练模型权重
+            * model 3 使用CNN进行文本分类
+        * 4. 模型评估与比较
 
 <!-- /TOC -->
 
