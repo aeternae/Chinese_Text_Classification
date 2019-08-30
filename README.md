@@ -246,7 +246,7 @@ label
 |8|C000024|Military|[0, 0, 0, 0, 0, 0, 0, 0, 1]|
 
 ### 3. 构建模型
-#### 1. model 1 自己训练词权重向量
+#### 3.1. model 1 自己训练词权重向量
 
 ```python
 model1 = Sequential()
@@ -257,58 +257,43 @@ model1.add(Flatten())
 model1.add(Dense(64, activation='relu', input_shape=(input_dim,)))
 model1.add(Dense(64, activation='relu'))
 model1.add(Dense(len(labels_index), activation='softmax'))
-```
-      _________________________________________________________________
-      Layer (type)                 Output Shape              Param #   
-      =================================================================
-      embedding_2 (Embedding)      (None, 1000, 300)         6000300   
-      _________________________________________________________________
-      flatten_2 (Flatten)          (None, 300000)            0         
-      _________________________________________________________________
-      dense_4 (Dense)              (None, 64)                19200064  
-      _________________________________________________________________
-      dense_5 (Dense)              (None, 64)                4160      
-      _________________________________________________________________
-      dense_6 (Dense)              (None, 9)                 585       
-      =================================================================
-      Total params: 25,205,109
-      Trainable params: 25,205,109
-      Non-trainable params: 0
-      _________________________________________________________________
-```
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+embedding_2 (Embedding)      (None, 1000, 300)         6000300   
+_________________________________________________________________
+flatten_2 (Flatten)          (None, 300000)            0         
+_________________________________________________________________
+dense_4 (Dense)              (None, 64)                19200064  
+_________________________________________________________________
+dense_5 (Dense)              (None, 64)                4160      
+_________________________________________________________________
+dense_6 (Dense)              (None, 9)                 585       
+=================================================================
+Total params: 25,205,109
+Trainable params: 25,205,109
+Non-trainable params: 0
+_________________________________________________________________
 
-代码中`word_index`表示发现的所有词，得到的文本序列取的是`word_index`中前面20000个词对应的索引，文本序列集合中的所有词的索引号都在20000之前：
-
-```python
-len(data[data>=20000])
-0
-```
-
-我们可以通过生成的词索引序列和对应的索引词典查看原始文本和对应的标签：
-
-```python
-# convert from index to origianl doc
-for w_index in data[0]:
-    if w_index != 0:
-        print(word_dict[w_index], end=' ')
+Train on 14328 samples, validate on 3582 samples
+Epoch 1/30
+14328/14328 [==============================] - 74s 5ms/step - loss: 1.6176 - acc: 0.6128 - val_loss: 0.3883 - val_acc: 0.8825
+Epoch 2/30
+14328/14328 [==============================] - 77s 5ms/step - loss: 0.1836 - acc: 0.9441 - val_loss: 0.3285 - val_acc: 0.9087
+Epoch 3/30
+14328/14328 [==============================] - 77s 5ms/step - loss: 0.0546 - acc: 0.9819 - val_loss: 0.3600 - val_acc: 0.9090
+........
+Epoch 28/30
+14328/14328 [==============================] - 73s 5ms/step - loss: 0.0242 - acc: 0.9886 - val_loss: 0.9496 - val_acc: 0.8981
+Epoch 29/30
+14328/14328 [==============================] - 73s 5ms/step - loss: 0.0254 - acc: 0.9882 - val_loss: 0.8832 - val_acc: 0.8989
+Epoch 30/30
+14328/14328 [==============================] - 73s 5ms/step - loss: 0.0246 - acc: 0.9886 - val_loss: 1.0093 - val_acc: 0.8936
 ```
 
-    昆虫 大自然 歌手 昆虫 口腔 发出 昆虫 界 著名 腹部 一对 是从 发出 外面 一对 弹性 称作 声 肌 相连 发音 肌 收缩 振动 声音 空间 响亮 传到 ５ ０ ０ 米 求婚 听到 发音 部位 发音 声音 两 张开 蚊子 一对 边缘 支撑 两只 每秒 ２ ５ ０ ～ ６ ０ ０ 次 推动 空气 往返 运动 发出 微弱 声 来源 语文 
-
-```python
-category_labels[dict_swaped(labels_index)[argmax(labels_categorical[0])]]
+#### 3.2. model 2 加载预训练模型权重
+定义词嵌入矩阵
 ```
-
-    '_20_Education'
-
-
-### 4. 定义词嵌入矩阵
-
-下面创建一个词嵌入矩阵，用来作为上述文本集合词典（只取序号在前`MAX_WORDS_NUM`的词，对应了比较常见的词）的词嵌入矩阵，矩阵维度是`(MAX_WORDS_NUM, EMBEDDING_DIM)`。矩阵的每一行`i`代表词典`word_index`中第`i`个词的词向量。这个词嵌入矩阵是预训练词向量的一个子集。我们的新闻语料中很可能有的词不在预训练词向量中，这样的词在这个词向量矩阵中对应的向量元素都设为零。还记得上面用`pad_sequence`补充的`0`元素么，它对应在词嵌入矩阵的向量也都是零。在本例中，20000个词有92.35%在预训练词向量中。
-
-
-```python
-EMBEDDING_DIM = 300 # embedding dimension
 embedding_matrix = np.zeros((MAX_WORDS_NUM+1, EMBEDDING_DIM)) # row 0 for 0
 for word, i in word_index.items():
     embedding_vector = embeddings_index.get(word)
@@ -317,214 +302,64 @@ for word, i in word_index.items():
             # Words not found in embedding index will be all-zeros.
             embedding_matrix[i] = embedding_vector
 ```
-
-```python
-nonzero_elements = np.count_nonzero(np.count_nonzero(embedding_matrix, axis=1))
-nonzero_elements / MAX_WORDS_NUM
+加载预训练参数
 ```
-
-    0.9235
-
-#### Embedding Layer
-
-嵌入层的输入数据`sequence`向量的整数是文本中词的编码，前面看到这个获取序列编码的步骤使用了Keras的`Tokenizer API`来实现，如果不使用预训练词向量模型，嵌入层是用随机权重进行初始化，在训练中将学习到训练集中的所有词的权重，也就是词向量。在定义`Embedding`层，需要至少3个输入数据：
-
-- `input_dim`：文本词典的大小，本例中就是`MAX_WORDS_NUM + 1`；
-- `output_dim`：词嵌入空间的维度，就是词向量的长度，本例中对应`EMBEDDING_DIM`；
-- `input_length`：这是输入序列的长度，本例中对应`MAX_SEQUENCE_LEN`。
-
-本文中还多了两个输入参数`weights=[embedding_matrix]`和`trainable=False`，前者设置该层的嵌入矩阵为上面我们定义好的词嵌入矩阵，即不适用随机初始化的权重，后者设置为本层参数不可训练，即不会随着后面模型的训练而更改。这里涉及了`Embedding`层的几种使用方式：
-
-- 从头开始训练出一个词向量，保存之后可以用在其他的训练任务中；
-- 嵌入层作为深度学习的第一个隐藏层，本身就是深度学习模型训练的一部分；
-- 加载预训练词向量模型，这是一种迁移学习，本文就是这样的示例。
-
-### 5. 构建模型
-
-Keras支持两种类型的模型结构：
-
-- Sequential类，顺序模型，这个仅用于层的线性堆叠，最常见的网络架构
-- Functional API，函数式API，用于层组成的有向无环图，可以构建任意形式的架构
-
-为了有个对比，我们先不加载预训练模型，让模型自己训练词权重向量。`Flatten`层用来将输入“压平”，即把多维的输入一维化，这是嵌入层的输出转入全连接层(`Dense`)的必需的过渡。
-
-
-```python
-from keras.models import Sequential
-from keras.layers import Dense, Flatten
-
-input_dim = x_train.shape[1]
-
-model1 = Sequential()
-model1.add(Embedding(input_dim=MAX_WORDS_NUM+1, 
-                    output_dim=EMBEDDING_DIM, 
-                    input_length=MAX_SEQUENCE_LEN))
-model1.add(Flatten())
-model1.add(Dense(64, activation='relu', input_shape=(input_dim,)))
-model1.add(Dense(64, activation='relu'))
-model1.add(Dense(len(labels_index), activation='softmax'))
-
-model1.compile(optimizer='rmsprop',
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
-
-history1 = model1.fit(x_train, 
-                    y_train,
-                    epochs=30,
-                    batch_size=128,
-                    validation_data=(x_val, y_val))
-```
-
-    Train on 14328 samples, validate on 3582 samples
-    Epoch 1/30
-    14328/14328 [==============================] - 59s 4ms/step - loss: 3.1273 - acc: 0.2057 - val_loss: 1.9355 - val_acc: 0.2510
-    Epoch 2/30
-    14328/14328 [==============================] - 56s 4ms/step - loss: 2.0853 - acc: 0.3349 - val_loss: 1.8037 - val_acc: 0.3473
-    Epoch 3/30
-    14328/14328 [==============================] - 56s 4ms/step - loss: 1.7210 - acc: 0.4135 - val_loss: 1.2498 - val_acc: 0.5731
-    ......
-    Epoch 29/30
-    14328/14328 [==============================] - 56s 4ms/step - loss: 0.5843 - acc: 0.8566 - val_loss: 1.3564 - val_acc: 0.6516
-    Epoch 30/30
-    14328/14328 [==============================] - 56s 4ms/step - loss: 0.5864 - acc: 0.8575 - val_loss: 0.5970 - val_acc: 0.8501
-
-
-每个Keras层都提供了获取或设置本层权重参数的方法：
-
-- `layer.get_weights()`：返回层的权重（`numpy array`）
-- `layer.set_weights(weights)`：从`numpy array`中将权重加载到该层中，要求`numpy array`的形状与`layer.get_weights()`的形状相同
-
-
-```python
-embedding_custom = model1.layers[0].get_weights()[0]
-embedding_custom
-```
-
-    array([[ 0.39893672, -0.9062594 ,  0.35500282, ..., -0.73564297,
-             0.50492775, -0.39815223],
-           [ 0.10640696,  0.18888871,  0.05909824, ..., -0.1642032 ,
-            -0.02778293, -0.15340094],
-           [ 0.06566656, -0.04023357,  0.1276007 , ...,  0.04459211,
-             0.08887506,  0.05389333],
-           ...,
-           [-0.12710813, -0.08472785, -0.2296919 , ...,  0.0468552 ,
-             0.12868881,  0.18596107],
-           [-0.03790742,  0.09758633,  0.02123675, ..., -0.08180046,
-             0.10254312,  0.01284804],
-           [-0.0100647 ,  0.01180602,  0.00446023, ...,  0.04730382,
-            -0.03696882,  0.00119566]], dtype=float32)
-
-
-
-`get_weights`方法得到的就是词嵌入矩阵，如果本例中取的词典足够大，这样的词嵌入矩阵就可以保存下来，作为其他任务的预训练模型使用。通过`get_config()`可以获取每一层的配置信息：
-
-
-```python
-model1.layers[0].get_config()
-```
-
-    {'activity_regularizer': None,
-     'batch_input_shape': (None, 1000),
-     'dtype': 'float32',
-     'embeddings_constraint': None,
-     'embeddings_initializer': {'class_name': 'RandomUniform',
-      'config': {'maxval': 0.05, 'minval': -0.05, 'seed': None}},
-     'embeddings_regularizer': None,
-     'input_dim': 20001,
-     'input_length': 1000,
-     'mask_zero': False,
-     'name': 'embedding_13',
-     'output_dim': 300,
-     'trainable': True}
-
-可以将模型训练的结果打印出来
-
-```python
-plot_history(history1)
-```
-
-![acc_loss_model1](img/acc_loss_model1.png)
-
-第一个模型训练时间花了大约30分钟训练完30个epoch，这是因为模型需要训练嵌入层的参数，下面第二个模型在第一个模型基础上加载词嵌入矩阵，并将词嵌入矩阵设为不可训练，看是否可以提高训练的效率。
-
-
-```python
-from keras.models import Sequential
-from keras.layers import Dense, Flatten
-
-input_dim = x_train.shape[1]
-
 model2 = Sequential()
 model2.add(Embedding(input_dim=MAX_WORDS_NUM+1, 
-                    output_dim=EMBEDDING_DIM, 
-                    weights=[embedding_matrix],
-                    input_length=MAX_SEQUENCE_LEN,
-                    trainable=False))
+                     output_dim=EMBEDDING_DIM, 
+                     weights=[embedding_matrix],
+                     input_length=MAX_SEQUENCE_LEN,
+                     trainable=False))
 model2.add(Flatten())
 model2.add(Dense(64, activation='relu', input_shape=(input_dim,)))
 model2.add(Dense(64, activation='relu'))
 model2.add(Dense(len(labels_index), activation='softmax'))
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+embedding_3 (Embedding)      (None, 1000, 300)         6000300   
+_________________________________________________________________
+flatten_3 (Flatten)          (None, 300000)            0         
+_________________________________________________________________
+dense_7 (Dense)              (None, 64)                19200064  
+_________________________________________________________________
+dense_8 (Dense)              (None, 64)                4160      
+_________________________________________________________________
+dense_9 (Dense)              (None, 9)                 585       
+=================================================================
+Total params: 25,205,109
+Trainable params: 19,204,809
+Non-trainable params: 6,000,300
+_________________________________________________________________
 
-model2.compile(optimizer='rmsprop',
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
-
-history2 = model2.fit(x_train, 
-                    y_train,
-                    epochs=10,
-                    batch_size=128,
-                    validation_data=(x_val, y_val))
+Train on 14328 samples, validate on 3582 samples
+Epoch 1/10
+14328/14328 [==============================] - 36s 2ms/step - loss: 1.4167 - acc: 0.6799 - val_loss: 0.6633 - val_acc: 0.7984
+Epoch 2/10
+14328/14328 [==============================] - 38s 3ms/step - loss: 0.2968 - acc: 0.9234 - val_loss: 0.6250 - val_acc: 0.8409
+Epoch 3/10
+14328/14328 [==============================] - 36s 3ms/step - loss: 0.1220 - acc: 0.9698 - val_loss: 0.6039 - val_acc: 0.8590
+Epoch 4/10
+14328/14328 [==============================] - 36s 3ms/step - loss: 0.0720 - acc: 0.9795 - val_loss: 0.6405 - val_acc: 0.8610
+Epoch 5/10
+14328/14328 [==============================] - 36s 3ms/step - loss: 0.0625 - acc: 0.9828 - val_loss: 0.9981 - val_acc: 0.8319
+Epoch 6/10
+14328/14328 [==============================] - 36s 2ms/step - loss: 0.0603 - acc: 0.9833 - val_loss: 0.8529 - val_acc: 0.8518
+Epoch 7/10
+14328/14328 [==============================] - 40s 3ms/step - loss: 0.0486 - acc: 0.9863 - val_loss: 0.7012 - val_acc: 0.8727
+Epoch 8/10
+14328/14328 [==============================] - 41s 3ms/step - loss: 0.0460 - acc: 0.9860 - val_loss: 0.9048 - val_acc: 0.8551
+Epoch 9/10
+14328/14328 [==============================] - 37s 3ms/step - loss: 0.0517 - acc: 0.9844 - val_loss: 0.9132 - val_acc: 0.8599
+Epoch 10/10
+14328/14328 [==============================] - 39s 3ms/step - loss: 0.0477 - acc: 0.9858 - val_loss: 0.8896 - val_acc: 0.8671
 ```
 
-    Train on 14328 samples, validate on 3582 samples
-    Epoch 1/10
-    14328/14328 [==============================] - 37s 3ms/step - loss: 1.3124 - acc: 0.6989 - val_loss: 0.7446 - val_acc: 0.8088
-    Epoch 2/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.2831 - acc: 0.9243 - val_loss: 0.5712 - val_acc: 0.8551
-    Epoch 3/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.1183 - acc: 0.9704 - val_loss: 0.6261 - val_acc: 0.8624
-    Epoch 4/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.0664 - acc: 0.9801 - val_loss: 0.6897 - val_acc: 0.8607
-    Epoch 5/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.0549 - acc: 0.9824 - val_loss: 0.7199 - val_acc: 0.8660
-    Epoch 6/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.0508 - acc: 0.9849 - val_loss: 0.7261 - val_acc: 0.8582
-    Epoch 7/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.0513 - acc: 0.9865 - val_loss: 0.8251 - val_acc: 0.8585
-    Epoch 8/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.0452 - acc: 0.9858 - val_loss: 0.7891 - val_acc: 0.8707
-    Epoch 9/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.0469 - acc: 0.9865 - val_loss: 0.8663 - val_acc: 0.8680
-    Epoch 10/10
-    14328/14328 [==============================] - 35s 2ms/step - loss: 0.0418 - acc: 0.9867 - val_loss: 0.9048 - val_acc: 0.8640
-
-
-
-```python
-plot_history(history2)
+#### 3.3. model 3 使用CNN进行文本分类
 ```
-
-![acc_loss_model2](img/acc_loss_model2.png)
-
-
-从第二个模型训练结果可以看到预训练模型的加载可以大幅提高模型训练的效率，模型的验证准确度也提升的比较快，但是同时发现在训练集上出现了过拟合的情况。
-
-第三个模型的结构来自于Keras作者的博客[示例](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html)，这是CNN用于文本分类的例子。
-
-```python
-from keras.layers import Dense, Input, Embedding
-from keras.layers import Conv1D, MaxPooling1D, Flatten
-from keras.models import Model
-
-embedding_layer = Embedding(input_dim=MAX_WORDS_NUM+1,
-                            output_dim=EMBEDDING_DIM,
-                            weights=[embedding_matrix],
-                            input_length=MAX_SEQUENCE_LEN,
-                            trainable=False)
-
-
-sequence_input = Input(shape=(MAX_SEQUENCE_LEN,), dtype='int32')
+sequence_input = Input(shape=(MAX_SEQUENCE_LEN, ), dtype='int32')
 embedded_sequences = embedding_layer(sequence_input)
+
 x = Conv1D(128, 5, activation='relu')(embedded_sequences)
 x = MaxPooling1D(5)(x)
 x = Conv1D(128, 5, activation='relu')(x)
@@ -534,50 +369,67 @@ x = MaxPooling1D(35)(x)  # global max pooling
 x = Flatten()(x)
 x = Dense(128, activation='relu')(x)
 preds = Dense(len(labels_index), activation='softmax')(x)
-
 model3 = Model(sequence_input, preds)
-model3.compile(loss='categorical_crossentropy',
-              optimizer='rmsprop',
-              metrics=['acc'])
 
-history3 = model3.fit(x_train, 
-                    y_train,
-                    epochs=6,
-                    batch_size=128,
-                    validation_data=(x_val, y_val))
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+input_1 (InputLayer)         (None, 1000)              0         
+_________________________________________________________________
+embedding_4 (Embedding)      (None, 1000, 300)         6000300   
+_________________________________________________________________
+conv1d_4 (Conv1D)            (None, 996, 128)          192128    
+_________________________________________________________________
+max_pooling1d_4 (MaxPooling1 (None, 199, 128)          0         
+_________________________________________________________________
+conv1d_5 (Conv1D)            (None, 195, 128)          82048     
+_________________________________________________________________
+max_pooling1d_5 (MaxPooling1 (None, 39, 128)           0         
+_________________________________________________________________
+conv1d_6 (Conv1D)            (None, 35, 128)           82048     
+_________________________________________________________________
+max_pooling1d_6 (MaxPooling1 (None, 1, 128)            0         
+_________________________________________________________________
+flatten_5 (Flatten)          (None, 128)               0         
+_________________________________________________________________
+dense_11 (Dense)             (None, 128)               16512     
+_________________________________________________________________
+dense_12 (Dense)             (None, 9)                 1161      
+=================================================================
+Total params: 6,374,197
+Trainable params: 373,897
+Non-trainable params: 6,000,300
+_________________________________________________________________
+
+Train on 14328 samples, validate on 3582 samples
+Epoch 1/10
+14328/14328 [==============================] - 299s 21ms/step - loss: 1.0102 - acc: 0.6692 - val_loss: 0.4984 - val_acc: 0.8632
+Epoch 2/10
+14328/14328 [==============================] - 300s 21ms/step - loss: 0.4830 - acc: 0.8592 - val_loss: 0.4404 - val_acc: 0.8682
+Epoch 3/10
+14328/14328 [==============================] - 302s 21ms/step - loss: 0.3531 - acc: 0.8910 - val_loss: 0.3636 - val_acc: 0.8900
+Epoch 4/10
+14328/14328 [==============================] - 304s 21ms/step - loss: 0.2728 - acc: 0.9119 - val_loss: 0.4350 - val_acc: 0.8721
+Epoch 5/10
+14328/14328 [==============================] - 301s 21ms/step - loss: 0.2159 - acc: 0.9268 - val_loss: 0.3523 - val_acc: 0.8925
+Epoch 6/10
+14328/14328 [==============================] - 303s 21ms/step - loss: 0.1653 - acc: 0.9432 - val_loss: 0.3387 - val_acc: 0.8992
+Epoch 7/10
+14328/14328 [==============================] - 302s 21ms/step - loss: 0.1286 - acc: 0.9540 - val_loss: 0.5655 - val_acc: 0.8607
+Epoch 8/10
+14328/14328 [==============================] - 300s 21ms/step - loss: 0.1048 - acc: 0.9638 - val_loss: 0.4838 - val_acc: 0.8822
+Epoch 9/10
+14328/14328 [==============================] - 302s 21ms/step - loss: 0.0819 - acc: 0.9703 - val_loss: 1.0261 - val_acc: 0.8199
+Epoch 10/10
+14328/14328 [==============================] - 303s 21ms/step - loss: 0.0789 - acc: 0.9740 - val_loss: 0.4246 - val_acc: 0.9070
 ```
 
-    Train on 14328 samples, validate on 3582 samples
-    Epoch 1/6
-    14328/14328 [==============================] - 77s 5ms/step - loss: 0.9943 - acc: 0.6719 - val_loss: 0.5129 - val_acc: 0.8582
-    Epoch 2/6
-    14328/14328 [==============================] - 76s 5ms/step - loss: 0.4841 - acc: 0.8571 - val_loss: 0.3929 - val_acc: 0.8841
-    Epoch 3/6
-    14328/14328 [==============================] - 77s 5ms/step - loss: 0.3483 - acc: 0.8917 - val_loss: 0.4022 - val_acc: 0.8724
-    Epoch 4/6
-    14328/14328 [==============================] - 77s 5ms/step - loss: 0.2763 - acc: 0.9100 - val_loss: 0.3441 - val_acc: 0.8942
-    Epoch 5/6
-    14328/14328 [==============================] - 76s 5ms/step - loss: 0.2194 - acc: 0.9259 - val_loss: 0.3014 - val_acc: 0.9107
-    Epoch 6/6
-    14328/14328 [==============================] - 77s 5ms/step - loss: 0.1749 - acc: 0.9387 - val_loss: 0.3895 - val_acc: 0.8788
+### 4. 模型评估与比较
 
-
-
-```python
-plot_history(history3)
-```
-
-
-![acc_loss_model3_cnn](img/acc_loss_model3_cnn.png)
-
-
-通过加入池化层`MaxPooling1D`，降低了过拟合的情况。验证集上的准备度超过了前两个模型，也超过了传统机器学习方法。
-
-
-### 参考资料
-
-- [Deep Learning, NLP, and Representations](http://colah.github.io/posts/2014-07-NLP-RNNs-Representations/)
-- [Keras Embedding Layers API](https://keras.io/layers/embeddings/)
-- [How to Use Word Embedding Layers for Deep Learning with Keras](https://machinelearningmastery.com/use-word-embedding-layers-deep-learning-keras/)
-- [Practical Text Classification With Python and Keras](https://realpython.com/python-keras-text-classification/)
-- [Francois Chollet: Using pre-trained word embeddings in a Keras model](https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html)
+将各模型训练的结果打印出来
+* model 1
+![model1](img/model1.png)
+* model 2
+![model2](img/model2.png)
+* model 3
+![model3](img/model3.png)
