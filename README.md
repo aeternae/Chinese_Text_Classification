@@ -427,9 +427,9 @@ Epoch 10/10
 ### 4. 模型评估与比较
 
 将各模型训练的结果打印出来
-* model 1
+* model 1<br>
 ![model1](img/model1.png)
-* model 2
+* model 2<br>
 ![model2](img/model2.png)
-* model 3
+* model 3<br>
 ![model3](img/model3.png)
