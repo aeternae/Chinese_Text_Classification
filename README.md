@@ -1,5 +1,6 @@
 
 # Chinese Text Classification
+## Zhixiang Wang
 
 文本分类（Text Classification）是自然语言处理中的一个重要应用技术，根据文档的内容或主题，自动识别文档所属的预先定义的类别标签。<br>
 本文语料来自搜狗新闻文本 [下载链接](https://pan.baidu.com/s/1SMfx0X0-b6F8L9J6T5Hg2Q)，密码:dh4x。<br>
